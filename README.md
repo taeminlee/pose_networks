@@ -1,3 +1,3 @@
 # pose networks
 
-Human pose detector using neural network
+Human Pose Estimation using neural network

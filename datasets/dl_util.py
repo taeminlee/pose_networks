@@ -1,46 +1,89 @@
-import urllib
-import urllib.request
+import requests
 import os
 import zipfile
 import tarfile
 from tqdm import tqdm
+import requests
+import math
+
+def writev(f, chunks, chunk_size, pbar, verbosity):
+    for chunk in chunks:
+        if chunk:
+            f.write(chunk)
+            if(verbosity):
+                pbar.update(chunk_size)
 
 def printv(msg, verbosity):
     if(verbosity):
         print(msg)
+                
 
-class TqdmUpTo(tqdm):
-    """Provides `update_to(n)` which uses `tqdm.update(delta_n)`."""
-    def update_to(self, b=1, bsize=1, tsize=None):
-        """
-        b  : int, optional
-            Number of blocks transferred so far [default: 1].
-        bsize  : int, optional
-            Size of each block (in tqdm units) [default: 1].
-        tsize  : int, optional
-            Total size (in tqdm units). If [default: None] remains unchanged.
-        """
-        if tsize is not None:
-            self.total = tsize
-        self.update(b * bsize - self.n)
+def download(url, dst, verbosity=True):
+    """
+    @param: url to download file
+    @param: dst place to put the file
+    """
+    file_size = int(requests.head(url).headers["Content-Length"])
+    if os.path.exists(dst):
+        first_byte = os.path.getsize(dst)
+    else:
+        first_byte = 0
+    if first_byte >= file_size:
+        return file_size
+    header = {"Range": "bytes=%s-%s" % (first_byte, file_size)}
+    pbar = tqdm(
+        total=file_size, initial=first_byte,
+        unit='B', unit_scale=True, desc=url.split('/')[-1])
+    req = requests.get(url, headers=header, stream=True)
+    with(open(dst, 'ab')) as f:
+        writev(f, req.iter_content(chunk_size=32768), 32768, pbar, verbosity)
+    pbar.close()
+    return file_size
 
-def download_file(url, path, overwrite=False, verbosity=True):
-    if (not os.path.exists(path) or overwrite):
-        if (not os.path.exists(os.path.dirname(path))):
-            os.makedirs(os.path.dirname(path))
+
+def download_file_from_google_drive(id, path, filename, verbosity):
+    URL = "https://docs.google.com/uc?export=download"
+    CHUNK_SIZE = 32768
+    session = requests.Session()
+    response = session.get(URL, params = { 'id' : id }, stream = True)
+    token = get_confirm_token(response)
+    if token:
+        params = { 'id' : id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+        make_directory(path)
+        pbar = tqdm(unit='B', unit_scale=True, desc=filename)
+        with open(os.path.join(path, filename), "wb") as f:
+            writev(f, response.iter_content(chunk_size=CHUNK_SIZE), CHUNK_SIZE, pbar, verbosity) 
+        pbar.close()
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+
+    return None
+
+def make_directory(path):
+    if (not os.path.exists(os.path.dirname(path))):
+        os.makedirs(os.path.dirname(path))
+
+def download_file(url, path, overwrite=False, verbosity=True, resume=True):
+    if (not os.path.exists(path) or overwrite or resume):
+        make_directory(path)
+        if(overwrite):
+            os.remove(path)
         if(verbosity):
-            with TqdmUpTo(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
-                urllib.request.urlretrieve(url, filename=path, reporthook=t.update_to)
-                printv("downloaded {} from {}".format(path, url), verbosity)
+            download(url, path, verbosity)
+            printv("downloaded {} from {}".format(path, url), verbosity)
         else:
-            urllib.request.urlretrieve(url, filename=path)
+            download(url, path, verbosity)
     else:
         printv("Skipping download ... {} already exists".format(path), verbosity)
 
-def download_files(urls, dir_path, overwrite=False, verbosity=True):
+def download_files(urls, dir_path, overwrite=False, verbosity=True, resume=True):
     for url in urls:
         filename = url.split('/')[-1]
-        download_file(url, os.path.join(dir_path, filename), overwrite, verbosity)
+        download_file(url, os.path.join(dir_path, filename), overwrite, verbosity, resume)
 
 def extract_all_files_in_directory(dir_path, extension, f_ref, f_iter, f_name, overwrite=False, verbosity=True):
     for item in os.listdir(dir_path): # loop through items in dir
