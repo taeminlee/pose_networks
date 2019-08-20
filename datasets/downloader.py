@@ -4,11 +4,13 @@ from dl_util import *
 def download_mpii(config=None):
     image_url = ['https://datasets.d2.mpi-inf.mpg.de/andriluka14cvpr/mpii_human_pose_v1.tar.gz']
     annotation_url = ['https://datasets.d2.mpi-inf.mpg.de/andriluka14cvpr/mpii_human_pose_v1_u12_2.zip']
+    annotation_json_url = ['https://raw.githubusercontent.com/bearpaw/pytorch-pose/master/data/mpii/mpii_annotations.json']
     video_urls = ['https://datasets.d2.mpi-inf.mpg.de/andriluka14cvpr/mpii_human_pose_v1_sequences_batch%d.tar.gz' % (idx+1) for idx in range(25)]
     video_image_map_url = ['https://datasets.d2.mpi-inf.mpg.de/andriluka14cvpr/mpii_human_pose_v1_sequences_keyframes.mat']
     dl_path = './mpii/'
     download_files(image_url, dl_path, config.overwrite, config.verbosity)
     download_files(annotation_url, dl_path, config.overwrite, config.verbosity)
+    download_files(annotation_json_url, dl_path, config.overwrite, config.verbosity)
     unzip_all_files_in_directory(dl_path, config.overwrite, config.verbosity)
     ungzip_all_files_in_directory(dl_path, config.overwrite, config.verbosity)
 
