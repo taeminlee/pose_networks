@@ -1,8 +1,12 @@
+#%%
 import os
 from scipy import io
 from PIL import Image
 import torchvision.transforms as transforms
 
+#%%
+no_images = [555, 556, 557] # indexes of annotation without image file
+#%%
 class MPII():
     def __init__(self, is_train=True, transform=None):
         print("loading annotations into memory...")
@@ -20,13 +24,19 @@ class MPII():
             self.transform = transforms.ToTensor()
         else:
             self.transform = transform
+
+        print("loaded annotations into memory...")
         
     def __getitem__(self, idx):
         anno = self.annolist[idx]
         image_name = self.get_image_name(anno)
-        img = Image.open(os.path.join('./datasets/mpii/images/', image_name)).convert('RGB')
-        if(self.transform is not None):
-            img = self.transform(img)
+        if(os.path.exists(os.path.join('./datasets/mpii/images/', image_name)) == False):
+            print("noimage", idx)
+            img = None
+        else:
+            img = Image.open(os.path.join('./datasets/mpii/images/', image_name)).convert('RGB')
+            if(self.transform is not None):
+                img = self.transform(img)
         target = {
             'annopoints' : self.get_annopoints(anno),
             'image_name' : image_name,
@@ -43,6 +53,8 @@ class MPII():
         if(idxs is None):
             idxs = range(self.num)
         for idx in idxs:
+            if(idx in no_images):
+                continue
             yield self[idx]
         return None
     
@@ -97,3 +109,9 @@ class MPII():
     
     def _objpos(self, objpos):
         return objpos['x'][0,0][0,0], objpos['y'][0,0][0,0]
+
+if __name__ == "__main__":
+    m = MPII()
+    idx = 0
+    for img, target in m:        
+        idx = idx+1

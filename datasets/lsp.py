@@ -16,6 +16,9 @@ class LSP():
             self.transform = transforms.ToTensor()
         else:
             self.transform = transform
+
+        print("loaded annotations into memory...")
+        
     def __getitem__(self, idx):
         image_name = 'im%04d.jpg' % (idx+1)
         img = Image.open(os.path.join('./datasets/lsp/images/', image_name)).convert('RGB')
