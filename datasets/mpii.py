@@ -1,8 +1,11 @@
+import os
 from scipy import io
+from PIL import Image
+import torchvision.transforms as transforms
 
 class MPII():
-    def __init__(self):
-        mat_file = io.loadmat('./mpii/mpii_human_pose_v1_u12_2/mpii_human_pose_v1_u12_1.mat')
+    def __init__(self, is_train=True, transform=None):
+        mat_file = io.loadmat('./datasets/mpii/mpii_human_pose_v1_u12_2/mpii_human_pose_v1_u12_1.mat')
 
         self.annolist = mat_file['RELEASE']['annolist'][0, 0][0]
         self.img_train = mat_file['RELEASE']['img_train'][0, 0][0]
@@ -11,6 +14,11 @@ class MPII():
         # self.video_list = mat_file['RELEASE']['video_list'][0, 0][0]
 
         self.num = len(self.annolist)
+
+        if(transform == None):
+            self.transform = transforms.ToTensor()
+        else:
+            self.transform = transform
     
     def _head(self, head):
         return head['x1'][0,0], head['y1'][0,0], head['x2'][0,0], head['y2'][0,0]
@@ -23,18 +31,28 @@ class MPII():
             idxs = range(self.num)
         for idx in idxs:
             anno = self.annolist[idx]
+            single_person = self.single_person[idx]
+            act = self.act[idx]
+            img_train = self.img_train[idx]
             image_name = self.get_image_name(anno)
             heads = self.get_heads(anno)
             scales = self.get_scales(anno)
             objposes = self.get_objposes(anno)
             annopoints = self.get_annopoints(anno)
-            if(annopoints is not None and annopoints[0] is not None and len(annopoints[0]) != 16):
-                print(idx)
-                print(idx)
-                print(idx)
-                print(idx)
-                print(idx)
-            yield image_name, heads, scales, objposes, annopoints
+            img = Image.open(os.path.join('./datasets/mpii/images/', image_name)).convert('RGB')
+            if(self.transform is not None):
+                img = self.transform(img)
+            target = {
+                'annopoints' : annopoints,
+                'image_name' : image_name,
+                'heads' : heads,
+                'scales': scales,
+                'objposes' : objposes,
+                'img_train' : img_train,
+                'single_person' : single_person,
+                'act' : act
+            }
+            yield img, target
         return None
     
     def _annopoint(self, annopoint):
