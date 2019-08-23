@@ -5,6 +5,7 @@ import torchvision.transforms as transforms
 
 class MPII():
     def __init__(self, is_train=True, transform=None):
+        print("loading annotations into memory...")
         mat_file = io.loadmat('./datasets/mpii/mpii_human_pose_v1_u12_2/mpii_human_pose_v1_u12_1.mat')
 
         self.annolist = mat_file['RELEASE']['annolist'][0, 0][0]
@@ -19,40 +20,30 @@ class MPII():
             self.transform = transforms.ToTensor()
         else:
             self.transform = transform
-    
-    def _head(self, head):
-        return head['x1'][0,0], head['y1'][0,0], head['x2'][0,0], head['y2'][0,0]
-    
-    def _objpos(self, objpos):
-        return objpos['x'][0,0][0,0], objpos['y'][0,0][0,0]
-    
+        
+    def __getitem__(self, idx):
+        anno = self.annolist[idx]
+        image_name = self.get_image_name(anno)
+        img = Image.open(os.path.join('./datasets/mpii/images/', image_name)).convert('RGB')
+        if(self.transform is not None):
+            img = self.transform(img)
+        target = {
+            'annopoints' : self.get_annopoints(anno),
+            'image_name' : image_name,
+            'heads' : self.get_heads(anno),
+            'scales': self.get_scales(anno),
+            'objposes' : self.get_objposes(anno),
+            'img_train' : self.img_train[idx],
+            'single_person' : self.single_person[idx],
+            'act' : self.act[idx]
+        }
+        return img, target
+
     def __iter__(self, idxs = None):
         if(idxs is None):
             idxs = range(self.num)
         for idx in idxs:
-            anno = self.annolist[idx]
-            single_person = self.single_person[idx]
-            act = self.act[idx]
-            img_train = self.img_train[idx]
-            image_name = self.get_image_name(anno)
-            heads = self.get_heads(anno)
-            scales = self.get_scales(anno)
-            objposes = self.get_objposes(anno)
-            annopoints = self.get_annopoints(anno)
-            img = Image.open(os.path.join('./datasets/mpii/images/', image_name)).convert('RGB')
-            if(self.transform is not None):
-                img = self.transform(img)
-            target = {
-                'annopoints' : annopoints,
-                'image_name' : image_name,
-                'heads' : heads,
-                'scales': scales,
-                'objposes' : objposes,
-                'img_train' : img_train,
-                'single_person' : single_person,
-                'act' : act
-            }
-            yield img, target
+            yield self[idx]
         return None
     
     def _annopoint(self, annopoint):
@@ -100,3 +91,9 @@ class MPII():
             annopoints = [self._annopoint(annopoint) for annopoint in anno['annorect']['annopoints'][0]]
             return annopoints
         return None
+        
+    def _head(self, head):
+        return head['x1'][0,0], head['y1'][0,0], head['x2'][0,0], head['y2'][0,0]
+    
+    def _objpos(self, objpos):
+        return objpos['x'][0,0][0,0], objpos['y'][0,0][0,0]

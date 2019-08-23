@@ -1,9 +1,9 @@
-#%%
+#%% import
+import os
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-import os
 
-#%%
+#%% COCO class (wrap torchvision dataset)
 class COCO():
     def __init__(self, is_train=True, transform=None):
         if(is_train):
