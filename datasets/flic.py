@@ -1,7 +1,8 @@
 #%% import
 import os
+import numpy as np
 from scipy import io
-from PIL import Image
+from PIL import Image, ImageDraw
 import torchvision.transforms as transforms
 
 #%% FLIC class
@@ -15,12 +16,12 @@ class FLIC():
         self.mat = io.loadmat(self.flic_path + 'examples.mat')['examples']
         
         self.num = self.mat.shape[-1]
+        print('total %s images' % self.num)
 
         if(transform == None):
             self.transform = transforms.ToTensor()
         else:
             self.transform = transform
-        print("loaded annotations into memory...")
 
     def __getitem__(self, idx):
         item = self.mat[0,idx]
@@ -49,9 +50,23 @@ class FLIC():
                 yield img, target
         return None
 
+    def draw_image(self, idx):
+        bak_trans = self.transform
+        self.transform = None
+        img, target = self[idx]
+        self.transform = bak_trans
+        draw = ImageDraw.Draw(img)
+        for keypoint in target['keypoints']:
+            if(np.isnan(keypoint[0])):
+                continue
+            draw.rectangle([p-5 for p in keypoint] + [p+5 for p in keypoint], outline='red')
+        img.show()
 
 #%%
 if __name__ == "__main__":
+    from tqdm import tqdm
     f = FLIC(is_full=True)
+    pbar = tqdm(total=f.num)
     for img, target in f:
-        print(target['image_name'])
+        pbar.update(1)
+        pbar.set_description(target['image_name'])

@@ -1,12 +1,12 @@
 #%%
 import os
+import numpy as np
 from scipy import io
-from PIL import Image
+from PIL import Image, ImageDraw
 import torchvision.transforms as transforms
 
 #%%
 no_images = [555, 556, 557] # indexes of annotation without image file
-#%%
 class MPII():
     def __init__(self, is_train=True, transform=None):
         print("loading annotations into memory...")
@@ -19,13 +19,12 @@ class MPII():
         # self.video_list = mat_file['RELEASE']['video_list'][0, 0][0]
 
         self.num = len(self.annolist)
+        print('total %s images' % self.num)
 
         if(transform == None):
             self.transform = transforms.ToTensor()
         else:
             self.transform = transform
-
-        print("loaded annotations into memory...")
         
     def __getitem__(self, idx):
         anno = self.annolist[idx]
@@ -109,9 +108,26 @@ class MPII():
     
     def _objpos(self, objpos):
         return objpos['x'][0,0][0,0], objpos['y'][0,0][0,0]
+    
+    def draw_image(self, idx):
+        bak_trans = self.transform
+        self.transform = None
+        img, target = self[idx]
+        self.transform = bak_trans
+        draw = ImageDraw.Draw(img)
+        if target['annopoints'] is not None:
+            for annotation in target['annopoints']:
+                for keypoint in np.array(annotation)[:,1]:
+                    if(np.isnan(keypoint[0])):
+                        continue
+                    draw.rectangle([p-5 for p in keypoint] + [p+5 for p in keypoint], outline='red')
+        img.show()
 
+#%%
 if __name__ == "__main__":
-    m = MPII()
-    idx = 0
-    for img, target in m:        
-        idx = idx+1
+    from tqdm import tqdm
+    f = MPII()
+    pbar = tqdm(total=f.num)
+    for img, target in f:
+        pbar.update(1)
+        pbar.set_description(target['image_name'])
