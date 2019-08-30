@@ -26,6 +26,12 @@ def download_lsp(config=None):
     download_files(download_url, dl_path, config.overwrite, config.verbosity)
     unzip_all_files_in_directory(dl_path, config.overwrite, config.verbosity)
 
+def download_lspet(config=None):
+    dl_path = './datasets/lspet/'
+    download_url = ['http://sam.johnson.io/research/lspet_dataset.zip']
+    download_files(download_url, dl_path, config.overwrite, config.verbosity)
+    unzip_all_files_in_directory(dl_path, config.overwrite, config.verbosity)
+
 def download_flic(config=None):
     dl_path = './datasets/flic/'
     download_file_from_google_drive('0B4K3PZp8xXDJN0Fpb0piVjQ3Y3M', dl_path, 'flic.zip', config.verbosity)
@@ -44,6 +50,8 @@ def main(config):
         download_coco(config)
     if(config.lsp):
         download_lsp(config)
+    if(config.lspet):
+        download_lspet(config)
     if(config.flic):
         download_flic(config)
     if(config.aichallenger):
@@ -55,6 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('--mpii_video', action='store_true')
     parser.add_argument('--coco', action='store_true')
     parser.add_argument('--lsp', action='store_true')
+    parser.add_argument('--lspet', action='store_true')
     parser.add_argument('--flic', action='store_true')
     parser.add_argument('--aichallenger', action='store_true')
     parser.add_argument('--overwrite', action='store_true')

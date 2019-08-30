@@ -38,7 +38,7 @@ class COCO():
             yield self[idx]
         return None
     
-    def draw_image(self, idx):
+    def get_image(self, idx):
         bak_trans = self.cap.transforms
         self.cap.transforms = None
         img, target = self[idx]
@@ -49,6 +49,10 @@ class COCO():
                 if(keypoint[0] == 0 and keypoint[1] == 0):
                     continue
                 draw.rectangle(list(keypoint-5) + list(keypoint+5), outline='red')
+        return img
+    
+    def show_image(self, idx):
+        img = self.get_image(idx)
         img.show()
 
 #%%

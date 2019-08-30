@@ -112,9 +112,11 @@ venv.bak/
 /datasets/mpii/
 /datasets/coco/
 /datasets/lsp/
+/datasets/lspet/
 /datasets/flic/
 /datasets/ai_challenger/
 
 # temp
 
 /temp/
+/private/

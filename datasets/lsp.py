@@ -7,9 +7,14 @@ import torchvision.transforms as transforms
 
 #%% LSP class
 class LSP():
-    def __init__(self, is_train=True, transform=None):
+    def __init__(self, is_train=True, transform=None, et=False):
         print("loading annotations into memory...")
-        self.joints = io.loadmat('./datasets/lsp/joints.mat')['joints']
+        self.et = et
+        if(et):
+            self.dataset_path = './datasets/lspet/'
+        else:
+            self.dataset_path = './datasets/lsp/'
+        self.joints = io.loadmat(os.path.join(self.dataset_path, 'joints.mat'))['joints']
 
         self.num = self.joints.shape[-1]
         print('total %s images' % self.num)
@@ -20,8 +25,11 @@ class LSP():
             self.transform = transform
         
     def __getitem__(self, idx):
-        image_name = 'im%04d.jpg' % (idx+1)
-        img = Image.open(os.path.join('./datasets/lsp/images/', image_name)).convert('RGB')
+        if(self.et):
+            image_name = 'im%05d.jpg' % (idx+1)
+        else:
+            image_name = 'im%04d.jpg' % (idx+1)
+        img = Image.open(os.path.join(self.dataset_path + 'images/', image_name)).convert('RGB')
         if(self.transform is not None):
             img = self.transform(img)
         points = list(zip(self.joints[0,:,idx], self.joints[1,:,idx]))
@@ -36,7 +44,7 @@ class LSP():
             yield self[idx]
         return None
     
-    def draw_image(self, idx):
+    def get_image(self, idx):
         bak_trans = self.transform
         self.transform = None
         img, target = self[idx]
@@ -46,6 +54,10 @@ class LSP():
             if(np.isnan(keypoint[0])):
                 continue
             draw.rectangle([p-5 for p in keypoint] + [p+5 for p in keypoint], outline='red')
+        return img
+    
+    def show_image(self, idx):
+        img = self.get_image(idx)
         img.show()
 
 #%%

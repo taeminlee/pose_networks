@@ -52,7 +52,7 @@ class AICHALLENGE():
             yield img, target
         return None
     
-    def draw_image(self, idx):
+    def get_image(self, idx):
         bak_trans = self.transform
         self.transform = None
         img, target = self[idx]
@@ -62,6 +62,10 @@ class AICHALLENGE():
             draw.rectangle(list(keypoint-5) + list(keypoint+5), outline='red')
         for bone in self.categories[0]['skeleton']:
             draw.line(list(target['keypoints'][bone[0]-1]) + list(target['keypoints'][bone[1]-1]), fill='red')
+        return img
+    
+    def show_image(self, idx):
+        img = self.get_image(idx)
         img.show()
 #%%
 if __name__ == "__main__":

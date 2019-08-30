@@ -50,7 +50,7 @@ class FLIC():
                 yield img, target
         return None
 
-    def draw_image(self, idx):
+    def get_image(self, idx):
         bak_trans = self.transform
         self.transform = None
         img, target = self[idx]
@@ -60,6 +60,10 @@ class FLIC():
             if(np.isnan(keypoint[0])):
                 continue
             draw.rectangle([p-5 for p in keypoint] + [p+5 for p in keypoint], outline='red')
+        return img
+    
+    def show_image(self, idx):
+        img = self.get_image(idx)
         img.show()
 
 #%%

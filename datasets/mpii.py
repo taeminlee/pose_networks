@@ -109,7 +109,7 @@ class MPII():
     def _objpos(self, objpos):
         return objpos['x'][0,0][0,0], objpos['y'][0,0][0,0]
     
-    def draw_image(self, idx):
+    def get_image(self, idx):
         bak_trans = self.transform
         self.transform = None
         img, target = self[idx]
@@ -121,6 +121,10 @@ class MPII():
                     if(np.isnan(keypoint[0])):
                         continue
                     draw.rectangle([p-5 for p in keypoint] + [p+5 for p in keypoint], outline='red')
+        return img
+    
+    def show_image(self, idx):
+        img = self.get_image(idx)
         img.show()
 
 #%%
@@ -131,3 +135,5 @@ if __name__ == "__main__":
     for img, target in f:
         pbar.update(1)
         pbar.set_description(target['image_name'])
+
+#%%
